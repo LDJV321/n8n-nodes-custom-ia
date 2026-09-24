@@ -4,6 +4,13 @@
 	"description": "n8n community nodes for any OpenAI-compatible AI provider: a Chat Model sub-node for the AI Agent, plus a media node to transcribe audio and analyze images. Configure a custom Base URL and headers once and use them everywhere.",
 	"license": "MIT",
 	"homepage": "https://www.npmjs.com/package/n8n-nodes-custom-ia",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/LDJV321/n8n-nodes-custom-ia.git"
+	},
+	"bugs": {
+		"url": "https://github.com/LDJV321/n8n-nodes-custom-ia/issues"
+	},
 	"keywords": [
 		"n8n-community-node-package"
 	],
