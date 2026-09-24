@@ -88,8 +88,10 @@ jobs:
         run: npm install -g npm@latest
 
       - name: Release
-        # Publishes to npm with a provenance attestation (requires id-token: write above).
-        # Lint and build run automatically as part of the release process.
+        # In CI (GITHUB_ACTIONS) `npm run release` runs lint + build and then
+        # publishes with RELEASE_MODE=true and NPM_CONFIG_PROVENANCE=true
+        # (n8n-node release detects CI and skips all git/bump operations).
+        # Direct `npm publish` is intentionally blocked by `n8n-node prerelease`.
         #
         # Option A (OIDC): leave NPM_TOKEN unset — the token step is skipped and
         #   npm uses the OIDC exchange instead.
@@ -97,6 +99,6 @@ jobs:
         #   .npmrc here before publishing.
         run: |
           [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
-          npm publish --provenance --access public
+          npm run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
