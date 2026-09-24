@@ -90,19 +90,6 @@ jobs:
       - name: Ensure latest npm (trusted publishing requires npm >= 11.5.1)
         run: npm install -g npm@latest
 
-      - name: Diagnose trusted publishing context
-        run: |
-          echo "npm version: $(npm --version)"
-          echo "node version: $(node --version)"
-          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
-            echo "ACTIONS_ID_TOKEN_REQUEST_URL: SET"
-            RESP=$(curl -s "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm" -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}")
-            echo "$RESP" | python3 -c "import sys,json,base64; v=json.load(sys.stdin)['value']; p=v.split('.')[1]; p+='='*(-len(p)%4); print('OIDC claims:'); print(json.dumps(json.loads(base64.urlsafe_b64decode(p)), indent=2, sort_keys=True))"
-          else
-            echo "ACTIONS_ID_TOKEN_REQUEST_URL: MISSING -> GitHub did NOT grant id-token: write"
-          fi
-          echo "NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN:-UNSET}"
-
       - name: Release
         # In CI (GITHUB_ACTIONS) `npm run release` runs lint + build and then
         # publishes with RELEASE_MODE=true and NPM_CONFIG_PROVENANCE=true
