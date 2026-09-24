@@ -1,0 +1,51 @@
+{
+	"name": "n8n-nodes-custom-ia",
+	"version": "0.1.2",
+	"description": "n8n Chat Model node for any OpenAI-compatible AI provider. Configure a custom Base URL and headers once and use it with the AI Agent, Basic LLM Chain and other AI nodes.",
+	"license": "MIT",
+	"homepage": "https://www.npmjs.com/package/n8n-nodes-custom-ia",
+	"keywords": [
+		"n8n-community-node-package"
+	],
+	"author": {
+		"name": "LDJV3",
+		"email": "ldjv3@users.noreply.github.com"
+	},
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease"
+	},
+	"files": [
+		"dist",
+		"CHANGELOG.md",
+		"!dist/**/*.map",
+		"!dist/**/*.tsbuildinfo"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"aiNodeSdkVersion": 1,
+		"strict": true,
+		"credentials": [
+			"dist/credentials/CustomAiApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/CustomAiChatModel/CustomAiChatModel.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "0.48.2",
+		"eslint": "9.32.0",
+		"prettier": "3.6.2",
+		"release-it": "^19.0.4",
+		"typescript": "5.9.2"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*",
+		"@n8n/ai-node-sdk": "*"
+	}
+}
