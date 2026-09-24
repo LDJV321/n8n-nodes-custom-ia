@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+- New **Custom AI Media** node (programmatic style) with two resources:
+  - **Audio**: `Transcribe` (`POST /audio/transcriptions`) and `Translate` to English (`POST /audio/translate`), multipart upload from the input item's binary property, optional `language`, `prompt`, `response format` (`json`, `text`, `verbose_json`, `srt`, `vtt`), `temperature`, `timeout` and `Extra Body`.
+  - **Image**: `Analyze` via `POST /chat/completions` with `image_url` content, from a binary property (base64 data URL) or one or more public URLs, with `prompt`, `detail`, `maxTokens`, `timeout` and `Extra Body`.
+  - Shared `Simplify` toggle, binary pass-through on the output item, `continueOnFail` support and redacted URLs in error messages.
+- The media node is registered as `usableAsTool`, so it can also be used from AI agents.
+- The package description and README now document both nodes and the `/models` credential-test limitation for transcription-only providers.
+
 ## 0.1.2
 
 - Hardening: ignore `__proto__`, `constructor` and `prototype` keys from **Extra Body** to avoid prototype pollution.

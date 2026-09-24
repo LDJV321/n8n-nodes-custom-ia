@@ -1,8 +1,11 @@
 # n8n-nodes-custom-ia
 
-This is an n8n community node. It provides a **Chat Model** that works with **any OpenAI-compatible AI provider**.
+This is an n8n community node package with **two nodes** that work with **any OpenAI-compatible AI provider**:
 
-Configure a custom **Base URL**, API key and optional custom headers once in the credentials, and then use it as the model of the **AI Agent**, **Basic LLM Chain** and any other AI node that accepts a Chat Model sub-node.
+- **Custom AI Chat Model** — a Chat Model sub-node for the **AI Agent**, **Basic LLM Chain** and any other AI node that accepts a Chat Model.
+- **Custom AI Media** — an action node that **transcribes audio** (`/audio/transcriptions`, `/audio/translate`) and **analyzes images** (vision via `/chat/completions`).
+
+Configure a custom **Base URL**, API key and optional custom headers once in the credentials, and use them from both nodes.
 
 Supported providers include (but are not limited to):
 
@@ -20,7 +23,8 @@ Supported providers include (but are not limited to):
 
 [Installation](#installation)
 [Credentials](#credentials)
-[Operations](#operations)
+[Custom AI Chat Model](#custom-ai-chat-model)
+[Custom AI Media](#custom-ai-media)
 [Compatibility](#compatibility)
 [Usage](#usage)
 [Resources](#resources)
@@ -43,11 +47,13 @@ The **Custom AI API** credential has the following fields:
 | Field | Description |
 | --- | --- |
 | **API Key** | Sent as `Authorization: Bearer <key>`. Leave empty for providers that don't require authentication (e.g. local servers). |
-| **Base URL** | Base URL of the OpenAI-compatible API, including the version path when the provider uses one (e.g. `https://api.openai.com/v1`). The node calls `<Base URL>/chat/completions` and `<Base URL>/models`. |
+| **Base URL** | Base URL of the OpenAI-compatible API, including the version path when the provider uses one (e.g. `https://api.openai.com/v1`). The nodes call `<Base URL>/chat/completions`, `<Base URL>/audio/transcriptions` and `<Base URL>/models`. |
 | **Add Custom Header** | Optional. Adds one extra header to every request (for example `HTTP-Referer` or `X-Title` required by some gateways). |
 | **Header Name** / **Header Value** | Name and value of the custom header. |
 
 When you save the credential, n8n tests it by calling `<Base URL>/models` with the configured authentication.
+
+> **Note:** If your provider doesn't expose `/models` (for example a transcription-only server), n8n reports the credential test as failed when saving. The credential still works for transcription: you can ignore that message.
 
 ### Provider examples
 
@@ -62,7 +68,7 @@ When you save the credential, n8n tests it by calling `<Base URL>/models` with t
 | Ollama | `http://localhost:11434/v1` | No |
 | LM Studio | `http://localhost:1234/v1` | No |
 
-## Operations
+## Custom AI Chat Model
 
 This node is a **Chat Model sub-node**. It does not execute on its own: connect it to the model input of a root AI node, such as:
 
@@ -90,6 +96,37 @@ DeepSeek notes:
 - DeepSeek accepts `low`, `high` and `max` (`medium` maps to `high`).
 - In thinking mode, `temperature`, `top P` and penalties have no effect.
 
+## Custom AI Media
+
+Action node that sends media from the input item to any OpenAI-compatible provider.
+
+| Resource | Operation | Endpoint |
+| --- | --- | --- |
+| Audio | **Transcribe** | `POST <Base URL>/audio/transcriptions` |
+| Audio | **Translate** (to English) | `POST <Base URL>/audio/translate` |
+| Image | **Analyze** | `POST <Base URL>/chat/completions` with `image_url` content |
+
+### Audio
+
+- **Binary Property**: name of the input binary property containing the audio file (flac, mp3, mp4, m4a, ogg, wav or webm). Watch provider file-size limits (25 MB on OpenAI).
+- **Model**: a transcription model, e.g. `whisper-1` (OpenAI), `groq/whisper-large-v3` (Groq) or your local whisper model.
+- **Options** (only sent when you add them): **Language** (ISO 639-1 code such as `en` or `es`), **Prompt** (hint for proper nouns), **Response Format** (`json`, `text`, `verbose_json` with timestamped segments, `srt`, `vtt`), **Sampling Temperature**, **Timeout** and **Extra Body**.
+- **Simplify** returns `text` (plus `language`, `duration` and `segments` when the provider returns them). With it disabled you get the raw provider response. The input binary is passed through to the output.
+
+### Image
+
+- **Input Type**: `Binary` (default: a base64 data URL is built from the input item) or `URL` (one or more comma-separated URLs).
+- **Model**: a vision model, e.g. `gpt-4o` (OpenAI), a `*-vision-preview` model (Groq) or a multimodal model served by Ollama/LM Studio.
+- **Prompt**: the question or instruction about the image (default `What's in this image?`).
+- **Options**: **Detail** (`auto`/`low`/`high`, OpenAI only — `auto` is not sent so other providers are unaffected), **Maximum Number of Tokens**, **Timeout** and **Extra Body** (e.g. `temperature`, `response_format`).
+- **Simplify** returns `text` with the model's answer. With it disabled you get the raw chat completion.
+
+### Notes
+
+- Audio transcription needs a provider with an `/audio/transcriptions`-compatible endpoint (OpenAI, Groq, local whisper servers...). Image analysis only needs `/chat/completions` with vision support.
+- **Extra Body** accepts a JSON object and is merged last (it can override any option above). Unknown keys such as `__proto__`, `constructor` and `prototype` are ignored.
+- The node can also be used as an AI tool; in that case prefer the `URL` input type for images.
+
 ## Compatibility
 
 - Requires a recent self-hosted n8n version that includes the AI node SDK (peer dependency `@n8n/ai-node-sdk`).
@@ -98,18 +135,32 @@ DeepSeek notes:
 
 ## Usage
 
+### Chat model
+
 1. Add an **AI Agent** (or **Basic LLM Chain**) node to your workflow.
 2. Open the **Chat Model** connector and select **Custom AI Chat Model**.
 3. Create a **Custom AI API** credential with your provider's Base URL and API key.
 4. Select a model from the list or type the model ID.
 5. Run the workflow.
 
+### Media (audio / image)
+
+1. Get a file into the workflow as binary (e.g. Read Binary Files, HTTP Request, Email Trigger...).
+2. Add a **Custom AI Media** node and keep the same **Custom AI API** credential.
+3. Choose `Audio` → `Transcribe` (or `Image` → `Analyze`), set the model and run the workflow.
+
 ## Resources
 
 - [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
 - [OpenAI API reference](https://platform.openai.com/docs/api-reference/chat)
+- [OpenAI audio transcription reference](https://platform.openai.com/docs/api-reference/audio/createTranscription)
 
 ## Version history
+
+### 0.2.0
+
+- New **Custom AI Media** node: transcribe and translate audio (`/audio/transcriptions`, `/audio/translate`) and analyze images (vision via `/chat/completions`) with any OpenAI-compatible provider, reusing the same **Custom AI API** credential.
+- The media node can also be used as an AI tool.
 
 ### 0.1.2
 

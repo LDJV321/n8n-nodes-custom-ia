@@ -1,7 +1,7 @@
 {
 	"name": "n8n-nodes-custom-ia",
-	"version": "0.1.2",
-	"description": "n8n Chat Model node for any OpenAI-compatible AI provider. Configure a custom Base URL and headers once and use it with the AI Agent, Basic LLM Chain and other AI nodes.",
+	"version": "0.2.0",
+	"description": "n8n community nodes for any OpenAI-compatible AI provider: a Chat Model sub-node for the AI Agent, plus a media node to transcribe audio and analyze images. Configure a custom Base URL and headers once and use them everywhere.",
 	"license": "MIT",
 	"homepage": "https://www.npmjs.com/package/n8n-nodes-custom-ia",
 	"keywords": [
@@ -34,7 +34,8 @@
 			"dist/credentials/CustomAiApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/CustomAiChatModel/CustomAiChatModel.node.js"
+			"dist/nodes/CustomAiChatModel/CustomAiChatModel.node.js",
+			"dist/nodes/CustomAiMedia/CustomAiMedia.node.js"
 		]
 	},
 	"devDependencies": {
