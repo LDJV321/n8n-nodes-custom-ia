@@ -2,7 +2,6 @@
 
 ## 0.2.0
 
-- New **Custom AI Chat Media (Via Completions)** node: audio (`input_audio` content part) and images (`image_url`) sent **exclusively through `/chat/completions`**, for providers without dedicated media endpoints (e.g. OpenCode Zen). Audio format inferred from the MIME type, opt-in options collection, `Extra Body` merging and binary pass-through.
 - New **Custom AI Media** node (programmatic style) with two resources:
   - **Audio**: `Transcribe` (`POST /audio/transcriptions`) and `Translate` to English (`POST /audio/translate`), multipart upload from the input item's binary property, optional `language`, `prompt`, `response format` (`json`, `text`, `verbose_json`, `srt`, `vtt`), `temperature`, `timeout` and `Extra Body`.
   - **Image**: `Analyze` via `POST /chat/completions` with `image_url` content, from a binary property (base64 data URL) or one or more public URLs, with `prompt`, `detail`, `maxTokens`, `timeout` and `Extra Body`.

@@ -35,8 +35,7 @@
 		],
 		"nodes": [
 			"dist/nodes/CustomAiChatModel/CustomAiChatModel.node.js",
-			"dist/nodes/CustomAiMedia/CustomAiMedia.node.js",
-			"dist/nodes/CustomAiChatMedia/CustomAiChatMedia.node.js"
+			"dist/nodes/CustomAiMedia/CustomAiMedia.node.js"
 		]
 	},
 	"devDependencies": {

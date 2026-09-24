@@ -1,10 +1,9 @@
 # n8n-nodes-custom-ia
 
-This is an n8n community node package with **three nodes** that work with **any OpenAI-compatible AI provider**:
+This is an n8n community node package with **two nodes** that work with **any OpenAI-compatible AI provider**:
 
 - **Custom AI Chat Model** — a Chat Model sub-node for the **AI Agent**, **Basic LLM Chain** and any other AI node that accepts a Chat Model.
 - **Custom AI Media** — an action node that **transcribes audio** (`/audio/transcriptions`, `/audio/translate`) and **analyzes images** (vision via `/chat/completions`).
-- **Custom AI Chat Media (Via Completions)** — the same media operations **through `/chat/completions` only**: audio as an `input_audio` content part and images as `image_url`. Use it with providers that have **no dedicated media endpoint** (e.g. OpenCode Zen).
 
 Configure a custom **Base URL**, API key and optional custom headers once in the credentials, and use them from both nodes.
 
@@ -26,7 +25,6 @@ Supported providers include (but are not limited to):
 [Credentials](#credentials)
 [Custom AI Chat Model](#custom-ai-chat-model)
 [Custom AI Media](#custom-ai-media)
-[Custom AI Chat Media (Via Completions)](#custom-ai-chat-media-via-completions)
 [Compatibility](#compatibility)
 [Usage](#usage)
 [Resources](#resources)
@@ -128,28 +126,6 @@ Action node that sends media from the input item to any OpenAI-compatible provid
 - Audio transcription needs a provider with an `/audio/transcriptions`-compatible endpoint (OpenAI, Groq, local whisper servers...). Image analysis only needs `/chat/completions` with vision support.
 - **Extra Body** accepts a JSON object and is merged last (it can override any option above). Unknown keys such as `__proto__`, `constructor` and `prototype` are ignored.
 - The node can also be used as an AI tool; in that case prefer the `URL` input type for images.
-
-## Custom AI Chat Media (Via Completions)
-
-Action node that sends media **exclusively through `POST <Base URL>/chat/completions`**, for providers that don't expose dedicated media endpoints (e.g. OpenCode Zen).
-
-| Resource | Operation | Content part |
-| --- | --- | --- |
-| Audio | **Transcribe** | `input_audio` (`{ data: <base64>, format }`) |
-| Image | **Analyze** | `image_url` (binary → data URL, or public URL) |
-
-- **Model**: for audio the model must accept audio input (e.g. `mimo-v2-omni`, `gpt-4o-audio`, Qwen3-ASR); for images a vision model.
-- **Prompt**: sent as the text part of the message. For audio it drives the transcript — write it in the language you want the result in.
-- **Binary Property**: with Chat Trigger uploads the file lands in `data0`.
-- The audio **format** is inferred from the MIME type (`audio/mpeg` → `mp3`, `audio/wav` → `wav`, `audio/mp4`/`x-m4a` → `m4a`, ...) falling back to the file extension.
-- **Simplify** returns `text`; with it disabled you get the raw chat completion. The input binary is passed through to the output.
-
-Notes:
-
-- Watch payload limits: base64 inflates the audio by ~35% and some gateways cap the body (about 10 MB encoded on some providers).
-- Not every provider accepts `input_audio` inside `chat/completions`. If the provider answers `400`, that model doesn't take audio: use a different model or use **Custom AI Media** with a provider that exposes the standard `/audio/transcriptions` endpoint.
-- **Reasoning models** (e.g. `mimo-v2.6-flash`) may return their answer in `reasoning_content` with `content: null` — the node falls back to `reasoning_content` automatically, so **Simplify** still returns a filled `text`.
-- **OpenCode Zen** (`https://opencode.ai/zen/go/v1`): validated with `mimo-v2.6-flash` (audio + images via completions). Transient provider outages surface as `503 Upstream request failed` — enable **Retry On Fail** on the node (e.g. 3 tries / 5 s) to ride through them; `400/422` responses mean that specific model doesn't accept `input_audio`.
 
 ## Compatibility
 
