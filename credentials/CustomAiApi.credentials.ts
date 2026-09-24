@@ -55,6 +55,9 @@ export class CustomAiApi implements ICredentialType {
 			default: '',
 			placeholder: 'e.g. HTTP-Referer',
 		},
+		// This header can carry a secret (e.g. an API key sent as a custom header),
+		// so keep it masked in the UI. Renaming the field would break saved credentials.
+		// eslint-disable-next-line @n8n/community-nodes/credential-unnecessary-password
 		{
 			displayName: 'Header Value',
 			name: 'headerValue',
