@@ -346,7 +346,23 @@ export class CustomAiChatModel implements INodeType {
 
 		const defaultHeaders: Record<string, string> = {};
 		if (credentials.header && credentials.headerName && credentials.headerValue) {
-			defaultHeaders[credentials.headerName as string] = credentials.headerValue as string;
+			const headerName = String(credentials.headerName).trim();
+			const isValidHeaderName = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/.test(headerName);
+			const isReservedHeader = [
+				'authorization',
+				'host',
+				'content-length',
+				'content-type',
+				'transfer-encoding',
+			].includes(headerName.toLowerCase());
+			if (!isValidHeaderName || isReservedHeader) {
+				throw new NodeOperationError(
+					this.getNode(),
+					`Invalid custom header name "${headerName}": use a valid HTTP header name and avoid reserved headers (Authorization, Host, Content-Length, Content-Type, Transfer-Encoding)`,
+					{ itemIndex },
+				);
+			}
+			defaultHeaders[headerName] = credentials.headerValue as string;
 		}
 
 		const useResponsesApi = options.useResponsesApi ?? false;

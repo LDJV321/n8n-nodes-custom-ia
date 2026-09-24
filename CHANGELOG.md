@@ -8,6 +8,10 @@
   - Shared `Simplify` toggle, binary pass-through on the output item, `continueOnFail` support and redacted URLs in error messages.
 - The media node is registered as `usableAsTool`, so it can also be used from AI agents.
 - The package description and README now document both nodes and the `/models` credential-test limitation for transcription-only providers.
+- **`Simplify` now defaults to off** on Custom AI Media: providers differ in where they place the answer (`content` vs `reasoning_content`), so the raw response is the safest default. The simplified extractor falls back to `reasoning_content` automatically.
+- Security hardening (pre-release audit): `redactUrl` applied to the `continueOnFail` error path; custom header names validated with a reserved-header deny-list (`Authorization`, `Host`, `Content-Length`, `Content-Type`, `Transfer-Encoding`); image URLs restricted to `http`/`https`/`data:image` schemes.
+- README: verified provider matrix (Groq free tier for audio, OpenCode Zen without `/audio/transcriptions`, chat uploads landing in `data0`) plus new **Troubleshooting** (Model "From list" disabled while the field is in Expression mode) and **Security** sections.
+- Fixed the GitHub Actions workflows (unresolved `{{packageManager.*}}` placeholders and the CI branch) so tag pushes publish to npm with provenance as n8n requires.
 
 ## 0.1.2
 

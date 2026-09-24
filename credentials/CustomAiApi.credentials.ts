@@ -93,13 +93,24 @@ export class CustomAiApi implements ICredentialType {
 			requestOptions.headers['Authorization'] = `Bearer ${credentials.apiKey}`;
 		}
 
-		if (
-			credentials.header &&
-			typeof credentials.headerName === 'string' &&
-			credentials.headerName &&
-			typeof credentials.headerValue === 'string'
-		) {
-			requestOptions.headers[credentials.headerName] = credentials.headerValue;
+		const headerName =
+			typeof credentials.headerName === 'string' ? credentials.headerName.trim() : '';
+		const isValidHeaderName = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/.test(headerName);
+		const isReservedHeader = [
+			'authorization',
+			'host',
+			'content-length',
+			'content-type',
+			'transfer-encoding',
+		].includes(headerName.toLowerCase());
+
+		if (credentials.header && headerName && credentials.headerValue !== undefined) {
+			if (!isValidHeaderName || isReservedHeader) {
+				throw new Error(
+					`Invalid custom header name "${headerName}": use a valid HTTP header name and avoid reserved headers (Authorization, Host, Content-Length, Content-Type, Transfer-Encoding)`,
+				);
+			}
+			requestOptions.headers[headerName] = credentials.headerValue;
 		}
 
 		return requestOptions;

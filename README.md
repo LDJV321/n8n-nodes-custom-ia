@@ -68,6 +68,12 @@ When you save the credential, n8n tests it by calling `<Base URL>/models` with t
 | Ollama | `http://localhost:11434/v1` | No |
 | LM Studio | `http://localhost:1234/v1` | No |
 
+### Audio and image support per provider (verified)
+
+- **Groq (free tier)** — recommended for audio: `https://api.groq.com/openai/v1` exposes both `POST /audio/transcriptions` and `POST /audio/translate`. Free plan: ~2,000 requests/day and 7,200 audio seconds/hour with `whisper-large-v3` / `whisper-large-v3-turbo`. No credit card required.
+- **OpenCode Zen** (`https://opencode.ai/zen/go/v1`) — images work through `chat/completions`, but audio does **not**: `/audio/transcriptions` returns `404`. Use Groq, OpenAI or a local whisper server for the audio resource.
+- Chat Trigger file uploads land in the binary property **`data0`** — set the node's *Binary Property* to `data0`.
+
 ## Custom AI Chat Model
 
 This node is a **Chat Model sub-node**. It does not execute on its own: connect it to the model input of a root AI node, such as:
@@ -111,7 +117,7 @@ Action node that sends media from the input item to any OpenAI-compatible provid
 - **Binary Property**: name of the input binary property containing the audio file (flac, mp3, mp4, m4a, ogg, wav or webm). Watch provider file-size limits (25 MB on OpenAI).
 - **Model**: a transcription model, e.g. `whisper-1` (OpenAI), `groq/whisper-large-v3` (Groq) or your local whisper model.
 - **Options** (only sent when you add them): **Language** (ISO 639-1 code such as `en` or `es`), **Prompt** (hint for proper nouns), **Response Format** (`json`, `text`, `verbose_json` with timestamped segments, `srt`, `vtt`), **Sampling Temperature**, **Timeout** and **Extra Body**.
-- **Simplify** returns `text` (plus `language`, `duration` and `segments` when the provider returns them). With it disabled you get the raw provider response. The input binary is passed through to the output.
+- **Simplify** (off by default): when enabled it returns `text` (plus `language`, `duration` and `segments` when the provider returns them). Leave it off to receive the raw provider response — recommended, because models differ in where they place the answer (`content` vs `reasoning_content`; the simplified extractor falls back to `reasoning_content` automatically). The input binary is passed through to the output.
 
 ### Image
 
@@ -119,13 +125,27 @@ Action node that sends media from the input item to any OpenAI-compatible provid
 - **Model**: a vision model, e.g. `gpt-4o` (OpenAI), a `*-vision-preview` model (Groq) or a multimodal model served by Ollama/LM Studio.
 - **Prompt**: the question or instruction about the image (default `What's in this image?`).
 - **Options**: **Detail** (`auto`/`low`/`high`, OpenAI only — `auto` is not sent so other providers are unaffected), **Maximum Number of Tokens**, **Timeout** and **Extra Body** (e.g. `temperature`, `response_format`).
-- **Simplify** returns `text` with the model's answer. With it disabled you get the raw chat completion.
+- **Simplify** (off by default): returns `text` with the model's answer (with automatic fallback to `reasoning_content` for reasoning models). Leave it off to get the raw chat completion.
 
 ### Notes
 
 - Audio transcription needs a provider with an `/audio/transcriptions`-compatible endpoint (OpenAI, Groq, local whisper servers...). Image analysis only needs `/chat/completions` with vision support.
 - **Extra Body** accepts a JSON object and is merged last (it can override any option above). Unknown keys such as `__proto__`, `constructor` and `prototype` are ignored.
 - The node can also be used as an AI tool; in that case prefer the `URL` input type for images.
+
+## Troubleshooting
+
+- **"From list" is greyed out in the Model field**: the field is in *Expression* mode — n8n disables the list mode while the value is an expression. Switch the **Fixed / Expression** segment back to **Fixed** and the list loads again (check for a leftover `=` value in the expression).
+- **Empty `text` with Simplify enabled**: enable Simplify only after checking the raw response (`simplify: false`) — reasoning models may put the answer in `reasoning_content`; the extractor falls back to it automatically, but raw output always shows where the provider placed the answer.
+
+## Security
+
+- Credentials are stored encrypted by n8n; the **API Key** and **Header Value** fields are masked and never written to workflow JSON, node output or error messages.
+- The **Base URL** makes the n8n server issue requests to that host (SSRF surface): only use Base URLs you trust, and never put credentials in the URL — use the API Key / custom header fields instead.
+- Custom header names are validated and **reserved headers** (`Authorization`, `Host`, `Content-Length`, `Content-Type`, `Transfer-Encoding`) are rejected, so a custom header can't silently override authentication or break the request.
+- Image URLs accept only `http`, `https` and `data:image` schemes — `file://` and other schemes are blocked (second-order SSRF / local file read).
+- Error messages redact `user:pass@` credentials embedded in URLs. **Secrets placed in the query string are not redacted** — don't put API keys in query parameters.
+- Files are buffered in memory before upload (base64 grows ~33%): respect provider size limits (25 MB for audio on OpenAI and similar) for images and audio alike.
 
 ## Compatibility
 

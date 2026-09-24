@@ -129,7 +129,9 @@ function coerceAudioResponse(raw: unknown): IDataObject {
 function extractChoiceText(choice: IDataObject | undefined): string {
 	if (!choice) return '';
 	const message = choice.message as IDataObject | undefined;
-	const content = message?.content ?? choice.text;
+	// Reasoning models may leave content null and put the answer in
+	// reasoning_content, so fall back to it when content is empty.
+	const content = message?.content || message?.reasoning_content || choice.text;
 
 	if (typeof content === 'string') return content;
 	if (Array.isArray(content)) {
@@ -204,7 +206,7 @@ async function executeAudioOperation(
 
 	const parsed = coerceAudioResponse(response);
 
-	const simplify = ctx.getNodeParameter('simplify', itemIndex, true) as boolean;
+	const simplify = ctx.getNodeParameter('simplify', itemIndex, false) as boolean;
 	if (!simplify) return parsed;
 
 	const simplified: IDataObject = { text: parsed.text ?? '' };
@@ -227,12 +229,23 @@ async function executeImageOperation(
 	const imageUrls: string[] = [];
 	if (inputType === 'url') {
 		const raw = ctx.getNodeParameter('imageUrls', itemIndex) as string;
-		imageUrls.push(
-			...raw
-				.split(',')
-				.map((entry) => entry.trim())
-				.filter(Boolean),
-		);
+		const urls = raw
+			.split(',')
+			.map((entry) => entry.trim())
+			.filter(Boolean);
+		const invalid = urls.filter((url) => !/^(https?:|data:image\/)/i.test(url));
+		if (invalid.length > 0) {
+			throw new NodeOperationError(
+				ctx.getNode(),
+				`Invalid image URL scheme: ${invalid[0]}`,
+				{
+					itemIndex,
+					description:
+						'Only http://, https:// and data:image URLs are supported (file:// and other schemes are blocked)',
+				},
+			);
+		}
+		imageUrls.push(...urls);
 		if (imageUrls.length === 0) {
 			throw new NodeOperationError(ctx.getNode(), 'No image URL provided', {
 				itemIndex,
@@ -282,7 +295,7 @@ async function executeImageOperation(
 	const choices = responseObj.choices as IDataObject[] | undefined;
 	const text = extractChoiceText(choices?.[0]);
 
-	const simplify = ctx.getNodeParameter('simplify', itemIndex, true) as boolean;
+	const simplify = ctx.getNodeParameter('simplify', itemIndex, false) as boolean;
 	if (simplify) return { text };
 
 	return responseObj;
@@ -545,9 +558,8 @@ export class CustomAiMedia implements INodeType {
 				displayName: 'Simplify',
 				name: 'simplify',
 				type: 'boolean',
-				default: true,
-				description:
-					'Whether to return a simplified version of the response instead of the raw data',
+				default: false,
+				description: 'Whether to return a simplified version of the response instead of the raw data. Off by default: providers differ in where they place the answer (e.g. content vs reasoning_content), so the raw response is the safest starting point.',
 			},
 			{
 				displayName: 'Options',
@@ -735,7 +747,9 @@ export class CustomAiMedia implements INodeType {
 			} catch (error) {
 				if (this.continueOnFail()) {
 					returnData.push({
-						json: { error: (error as Error).message },
+						json: {
+							error: redactUrl((error as Error)?.message ?? String(error)),
+						},
 						pairedItem: { item: itemIndex },
 					});
 					continue;

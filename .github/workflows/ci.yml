@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - main
+      - master
 
 # Cancel in-progress runs for the same branch/PR to avoid wasting CI minutes.
 concurrency:
@@ -22,13 +22,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-          cache: '{{packageManager.name}}'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: '{{packageManager.name}} {{packageManager.installCommand}}'
+        run: 'npm ci'
 
       - name: Run lint
-        run: '{{packageManager.name}} run lint'
+        run: 'npm run lint'
 
       - name: Run build
-        run: '{{packageManager.name}} run build'
+        run: 'npm run build'
